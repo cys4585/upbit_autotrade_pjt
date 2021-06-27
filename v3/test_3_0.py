@@ -43,40 +43,31 @@ class MyUpbit:
         return ma
 
 
-    def check_market(self):
-        ma = self.compute_moving_average(5, 10, 20, 40, 60, 80)
+    def run(self):
+        ma = self.compute_moving_average(1, 5, 10, 20, 40, 60, 80)
+        market = None
         # 약세시장(하락)
-        if ma[5] < ma[10] < ma[20] < ma[40] < ma[60] < ma[80]:
-            return 'bear'
+        if ma[5] < ma[10] < ma[20] < ma[40] < ma[60]: market = 'bear'
         # 강세시장(상승)
-        elif ma[5] > ma[10] > ma[20] > ma[40] > ma[60] < ma[80]:
-            return 'bull'
+        elif ma[5] > ma[10] > ma[20] > ma[40] > ma[60]: market = 'bull'
         # 횡보(박스)
-        else:
-            return 'box'
-        
+        else: market = 'box'
+        print(f'### {market} market ! ###')
 
-    def buy_sell_coin(self, market):
         current_price = float(pyupbit.get_current_price(self.market))
-        print('최근체결가: {:,} / 현재가: {:,}'.format(self.last_execution_price, current_price))
         if market == 'box':
-            print('box')
             print(f'{self.stop_sec}초 정지')
             time.sleep(self.stop_sec)
             return
-        while True:
-            print()
-            print(f'{market} market : 감시!')
-            ma = self.compute_moving_average(1, 12)
-            print('ma1: {:,} / ma12: {:,}'.format(ma[1], ma[12]))
-            if ma[1] > ma[12]: print('{:,} > {:,}'.format(ma[1], ma[12]))
-            elif ma[1] < ma[12]: print('{:,} < {:,}'.format(ma[1], ma[12]))
-            else: print('{:,} == {:,}'.format(ma[1], ma[12]))
-            
-            current_price = pyupbit.get_current_price(self.market)
+        else:
+            print('ma1: {:,} / ma10: {:,}'.format(ma[1], ma[10]))
+            if ma[1] > ma[10]: print('{:,} > {:,}'.format(ma[1], ma[10]))
+            elif ma[1] < ma[10]: print('{:,} < {:,}'.format(ma[1], ma[10]))
+            else: print('{:,} == {:,}'.format(ma[1], ma[10]))
             print('최근체결가: {:,} / 현재가: {:,}'.format(self.last_execution_price, current_price))
 
-            if market == 'bear' and ma[1] >= ma[12] and self.last_execution_price > current_price:
+            # 하락장
+            if market == 'bear' and ma[1] > ma[10] and current_price + 30000 < self.last_execution_price:
                 print('buy!')
                 ordered = self.upbit.buy_market_order(self.market, self.order_krw)
                 if ordered.get('error') is None:
@@ -85,31 +76,34 @@ class MyUpbit:
                     order = self.upbit.get_order(ordered['uuid'])
                     self.last_execution_price = float(order['trades'][0]['price'])
                     print('체결가: {:,}'.format(self.last_execution_price))
+                    print(f'{self.stop_sec * 2}초 정지')
+                    time.sleep(self.stop_sec * 2)
                 else:
                     print('매수 실패')
                     print(ordered)
-                print(f'{self.stop_sec}초 정지')
-                time.sleep(self.stop_sec)
-                return 
-            elif market == 'bull' and ma[1] <= ma[12] and self.last_execution_price < current_price:
+                    print(f'{self.stop_sec // 2}초 정지')
+                    time.sleep(self.stop_sec // 2)
+            # 상승장
+            elif market == 'bull' and ma[1] < ma[10] and current_price - 30000 > self.last_execution_price:
                 print('sell!')
                 balance = self.upbit.get_balance(self.market)   # 코인 보유량
                 sell_amount = self.order_krw * self.sell_weight / current_price # 판매 희망량
+                # 판매 희망량이 코인 보유량 보다 많으면 팔 수 없음 -> 코인 보유량 만큼만 판다.
                 if balance >= sell_amount: ordered = self.upbit.sell_market_order(self.market, sell_amount)
                 else: ordered = self.upbit.sell_market_order(self.market, balance)
-
                 if ordered.get('error') is None:
                     time.sleep(3)
                     pprint(ordered)
                     order = self.upbit.get_order(ordered['uuid'])
                     self.last_execution_price = float(order['trades'][0]['price'])
                     print('체결가: {:,}'.format(self.last_execution_price))
+                    print(f'{self.stop_sec * 2}초 정지')
+                    time.sleep(self.stop_sec * 2)
                 else:
                     print('매도 실패')
                     print(ordered)
-                print(f'{self.stop_sec}초 정지')
-                time.sleep(self.stop_sec)
-                return 
-            print(f'{self.stop_sec // 6}초 정지')
-            time.sleep(self.stop_sec // 6)
-
+                    print(f'{self.stop_sec // 2}초 정지')
+                    time.sleep(self.stop_sec // 2)
+            else:
+                print(f'{self.stop_sec // 6}초 정지')
+                time.sleep(self.stop_sec // 6)

@@ -1,4 +1,4 @@
-from test_2_0 import MyUpbit
+from test_3_0 import MyUpbit
 import os
 import json
 
@@ -12,6 +12,4 @@ secret_key = secrets['sh']['UPBIT_OPEN_API_SECRET_KEY']
 myUpbit = MyUpbit(access_key, secret_key, 'KRW-BTC', order_krw=30000, interval='minute3')
 while True:
     print()
-    print('#'*25)
-    market = myUpbit.check_market()
-    myUpbit.buy_sell_coin(market)
+    market = myUpbit.run()
