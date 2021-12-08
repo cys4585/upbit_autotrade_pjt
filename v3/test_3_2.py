@@ -9,7 +9,7 @@ with open(secret_file) as f:
 access_key = secrets['sh']['UPBIT_OPEN_API_ACCESS_KEY']
 secret_key = secrets['sh']['UPBIT_OPEN_API_SECRET_KEY']
 
-myUpbit = MyUpbit(access_key, secret_key, 'KRW-BTC', order_krw=30000, interval='minute3')
+myUpbit = MyUpbit(access_key, secret_key, 'KRW-BTC', order_krw=50000, interval='minute3')
 while True:
     print()
     market = myUpbit.run()
